@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Input, Button, message } from 'antd';
 import './App.css';
 
 const App = () => {
@@ -8,38 +9,49 @@ const App = () => {
   const [jw, setJw] = useState('');
   const [principal, setPrincipal] = useState(null);
   const [angBulanan, setAngBulanan] = useState(null);
+  const [messageApi, contextHolder] = message.useMessage();
 
+  const error = () => {
+    messageApi.open({
+      type: 'error',
+      content: 'Input tidak boleh ada yang kosong!',
+    });
+  };
+  
   const principalTotal = () => {
-    const cleanStrOtr = otr.replace(/[^0-9]/g, '')
-    const cleanStrDp = dp.replace(/[^0-9]/g, '')
+    const cleanStrOtr = otr.replace(/[^0-9]/g, '');
+    const cleanStrDp = dp.replace(/[^0-9]/g, '');
     if (cleanStrOtr && cleanStrDp) {
-      const total = Number(cleanStrOtr - cleanStrDp);
+      const total = Number(cleanStrOtr) - Number(cleanStrDp);
       setPrincipal(total);
       setPage('tenor');
-    } else { 
-      alert("Input tidak valid");
+    } else {
+      error();
     }
   };
 
   const countmonthlyInstallment = () => {
-    if (jw <= 12) {
-      const bungTotal = principal * 0.12 * 1;
-      const totPembayaran = principal + bungTotal;
-      const total = totPembayaran / jw
-      setAngBulanan(total);
+    const tenor = Number(jw);
+    if (!principal || tenor <= 0) {
+      error();
+      return;
     }
-    if (jw > 12 && jw <= 24) {
-      const bungTotal = principal * 0.14 * 1;
-      const total = principal + bungTotal;
-      setAngBulanan(total);
+
+    let bunga = 0;
+
+    if (tenor <= 12) {
+      bunga = 0.12;
+    } else if (tenor <= 24) {
+      bunga = 0.14;
+    } else {
+      bunga = 0.165;
     }
-    if (jw > 24) {
-      const bungTotal = principal * 0.165 * 1;
-      const totPembayaran = principal + bungTotal;
-      const total = totPembayaran / jw
-      setAngBulanan(total);
-    }
-  }
+
+    const bungTotal = principal * bunga * 1;
+    const totPembayaran = principal + bungTotal;
+    const total = totPembayaran / tenor;
+    setAngBulanan(total);
+  };
 
   const formatNumber = (num) => {
     if (!num) return '';
@@ -71,46 +83,60 @@ const App = () => {
       case 'home':
         return (
           <>
-            <h1>MY FINANCE</h1>
+          {contextHolder}
+            <h1>IMS FINANCE</h1>
             <div className="inputs">
-              <input
-                id="otr"
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px'}}>
+              <text>Rp</text>
+              <Input
+                // id="otr"
                 type="text"
                 value={otr}
                 onChange={handleOtrChange}
                 placeholder="Input OTR"
               />
-              <input
-                id="dp"
+              
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px'}}>
+              <text>Rp</text>
+              <Input
+                // id="dp"
                 type="text"
                 value={dp}
                 onChange={handleDpChange}
                 placeholder="Input DP"
               />
+              </div>
             </div>
-            <button onClick={principalTotal}>OK</button>
+            <Button type='primary' onClick={principalTotal}>Lanjut</Button>
           </>
         );
       case 'tenor':
         return (
           <>
+          {contextHolder}
             <h1>Pilih Jangka Waktu</h1>
-            <input
-                id="jw"
-                type="number"
-                min={0}
-                max={100}
-                value={jw}
-                onChange={(e) => setJw(e.target.value)}
-                placeholder="Input Tenor"
-              />
-                <div className='buttons-tenor'>
-                  <button onClick={countmonthlyInstallment}>OK</button>
-                  <button onClick={() =>setPage('home')}>Batal</button>
-                </div>
-                <div> <h1>Angsuran Bulanan</h1>
-                <p style={{ fontWeight: 'bold' }}>{angBulanan && formatToRupiah(angBulanan)}</p>
-                </div>           
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px'}}>
+            <Input
+              id="jw"
+              type="number"
+              min={1}
+              max={100}
+              value={jw}
+              onChange={(e) => setJw(e.target.value)}
+            />
+            <text>Bulan</text>
+            </div>
+            <div className="buttons-tenor">
+              <Button type='primary' onClick={countmonthlyInstallment}>Submit</Button>
+              <Button type='default' onClick={() => setPage('home')}>Kembali</Button>
+            </div>
+            <div>
+              <h1>Angsuran Bulanan</h1>
+              <p style={{ fontSize: '20px', fontWeight: 'bold' }}>
+                {angBulanan && formatToRupiah(angBulanan)} 
+              </p>
+            </div>
           </>
         );
       default:
